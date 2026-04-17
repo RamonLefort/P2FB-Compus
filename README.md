@@ -12,7 +12,7 @@ A continuación se detalla el listado de TADs. Marca las tareas con una `x` (eje
 - [x] **TAD HB**: Implementación del *Heartbeat* para monitorización del estado del sistema.
 - [x] **TAD EEPROM**: Gestión de lectura/escritura en memoria no volátil.
 - [x] **TAD TIMER**: Abstracción de temporizadores de hardware para la base de tiempos.
-- [ ] **TAD ADC**: Controlador para la conversión Analógico-Digital.
+- [x] **TAD ADC**: Controlador para la conversión Analógico-Digital.
 
 ### Capa de Dispositivos (Drivers)
 - [ ] **TAD LCD**: Controlador para la visualización de datos en pantalla de cristal líquido.
