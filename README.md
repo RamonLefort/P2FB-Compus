@@ -23,19 +23,3 @@ A continuación se detalla el listado de TADs. Marca las tareas con una `x` (eje
 ### Capa de Aplicación
 - [ ] **TAD ORGANIZER**: Planificador de tareas (Scheduler) para la ejecución cooperativa.
 - [ ] **TAD ANIMALS**: Lógica de dominio específica para la gestión de entidades "Animals".
-
----
-
-## 🛠 Consideraciones de Diseño
-
-| Aspecto | Estrategia de Ingeniería |
-| :--- | :--- |
-| **Encapsulamiento** | Los datos de las estructuras deben estar ocultos en el `.c` (Opaque Pointers) siempre que sea posible. |
-| **Argumentación** | Se prefiere el uso de interrupciones (SIOInt) frente al *polling* para optimizar el ciclo de CPU. |
-| **Robustez** | Cada TAD debe incluir manejo de errores y estados de inicialización. |
-
-## 🚀 Instrucciones de Uso
-
-1. **Definición:** Crea el archivo de cabecera `.h` con los prototipos de las funciones.
-2. **Implementación:** Desarrolla la lógica en el archivo `.c`.
-3. **Validación:** Verifica el comportamiento en hardware o simulador antes de marcar la tarea.
