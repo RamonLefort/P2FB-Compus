@@ -4,7 +4,7 @@
 // Definicions privades del TAD
 #define CONFIGURACIO_TXSTA 0x24     // Dades de 8 bits, TX Enable, Asíncron, BRGH=1
 #define CONFIGURACIO_RCSTA 0x90     // Enable canal serie, 8 bits, asíncron, RX enable
-#define DIVISOR_BAUDRATE 64
+#define DIVISOR_BAUDRATE 255
 
 // El TAD dimensiona una cua de recepció de valors de 32 chars.
 #define MAX_RX 32
@@ -98,7 +98,7 @@ void SIO_PutString (unsigned char *LaFrase) {
 // Post: Posa la frase a la cua d'enviament.
     unsigned char Index=0;
     while (LaFrase[Index]!=0x00)
-        SIO_PutChar (LaFrase[Index++]);
+        SIO_PutChar(LaFrase[Index++]);
 }
 
 // Destructor del TAD

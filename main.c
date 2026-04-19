@@ -2,6 +2,9 @@
 #include "TAD_TIMER.h"
 #include "TAD_HB.h"
 #include "TAD_SIOInt.h"
+#include "TAD_JSK.h"
+#include "TAD_BTN.h"
+#include "TAD_ADC.h"
 
 //Configuramos el Oscilador a 40MHz
 #pragma config OSC = HSPLL
@@ -30,9 +33,14 @@ static void __interrupt (high_priority) LaRSI (void){
 void main(void) {
     TI_Init();
     SIO_Init();
+    ADC_Init();
+    JSK_Init();
+    BTN_Init();
     HB_Init();
 	while(1){
         HB_Motor();
+        JSK_Motor();
+        BTN_Motor();
 	}
 	return;
 }
