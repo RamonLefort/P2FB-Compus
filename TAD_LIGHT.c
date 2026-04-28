@@ -9,9 +9,8 @@ static unsigned char light_active = 0;
 static unsigned int light_counter = 0;
 static unsigned int light_value = 0;
 
-void LIGHT_Init(void)
-{
-    // al ser anal√≥gico no se hasta que punto este TAD es v√°lido
+void LIGHT_Init(void){
+    // al ser analÛgico no se hasta que punto este TAD es v·lido
     
 }
 
@@ -60,9 +59,3 @@ void LIGHT_Motor(void){
             break;
     }
 }
-
-
-
-
-
-

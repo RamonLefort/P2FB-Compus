@@ -20,17 +20,23 @@ static unsigned char IniciTX, FiTX, QuantsTX;
 
 // Constructor del TAD
 void SIO_Init(void){
-    // Post: Configuració de la UART en mode assíncron, 9600 bauds, suposant fOsc=10MHz.
-    IniciRX=FiRX=QuantsRX=0;
+    IniciRX = FiRX = QuantsRX = 0;
     TRISCbits.TRISC6 = 1;
     TRISCbits.TRISC7 = 1;
-    BAUDCONbits.BRG16=0;
-    TXSTA=CONFIGURACIO_TXSTA;
-    RCSTA=CONFIGURACIO_RCSTA;
-    SPBRG=DIVISOR_BAUDRATE;
-    PIE1bits.RCIE=1;
-    PIE1bits.TXIE=1;
-    }
+    
+    BAUDCONbits.BRG16 = 0; 
+    
+    // 1. Cargar el divisor primero
+    SPBRG = DIVISOR_BAUDRATE;
+    
+    // 2. Configurar modo y habilitar
+    TXSTA = CONFIGURACIO_TXSTA; // BRGH=1, TXEN=1
+    RCSTA = CONFIGURACIO_RCSTA; // SPEN=1, CREN=1
+    
+    // 3. Interrupciones
+    PIE1bits.RCIE = 1;
+    PIE1bits.TXIE = 1; // RECOMENDACIÓN: Mantén TXIE=0 hasta que tengas algo que enviar en SIO_PutChar
+}
 
 void SIO_InterrupcioRX (void) {
     // Esborrem el IF de recepció.

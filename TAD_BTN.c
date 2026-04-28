@@ -31,7 +31,9 @@ void BTN_Motor(void){
 		case 1:
 			if (TI_GetTics(TimRebots) >= TREBOTS && BUTTON == PRESSED) {
 				ButtonState = ON;
-                SIO_PutString("OK");
+                SIO_PutChar('S');
+                SIO_PutChar('\r');
+                SIO_PutChar('\n');
 				state = 2;
 			}
 			else if (TI_GetTics(TimRebots) >= TREBOTS && BUTTON != PRESSED) {
