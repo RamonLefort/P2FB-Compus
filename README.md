@@ -15,7 +15,7 @@ A continuación se detalla el listado de TADs. Marca las tareas con una `x` (eje
 - [x] **TAD ADC**: Controlador para la conversión Analógico-Digital.
 
 ### Capa de Dispositivos (Drivers)
-- [ ] **TAD LCD**: Controlador para la visualización de datos en pantalla de cristal líquido.
+- [x] **TAD LCD**: Controlador para la visualización de datos en pantalla de cristal líquido.
 - [x] **TAD LIGHT**: Gestión del sensor de luminosidad (LDR).
 - [x] **TAD JSK**: Interfaz para el manejo de Joystick (ejes X/Y y pulsador).
 - [x] **TAD Button**: Lógica de *debouncing* (antirrebotes) y gestión de eventos de pulsadores.
