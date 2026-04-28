@@ -17,11 +17,15 @@ void CheckMove(char mostra, char i) {
     if (estado_anterior[i] == 0) {
         if (mostra > ACT_HIGH) {
             estado_anterior[i] = 1;
-            SIO_PutChar( (i == 0) ? 'R' : 'U' );
+            SIO_PutChar( (i == 0) ? 'L' : 'U' );
+            SIO_PutChar('\r');
+            SIO_PutChar('\n');
         } 
         else if (mostra < ACT_LOW) {
             estado_anterior[i] = 2;
-            SIO_PutChar( (i == 0) ? 'L' : 'D' );
+            SIO_PutChar( (i == 0) ? 'R' : 'D' );
+            SIO_PutChar('\r');
+            SIO_PutChar('\n');
         }
     } 
     else if (estado_anterior[i] == 1) {

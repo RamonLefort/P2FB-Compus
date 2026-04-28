@@ -5,6 +5,9 @@
 #include "TAD_JSK.h"
 #include "TAD_BTN.h"
 #include "TAD_ADC.h"
+#include "TAD_IFC.h"
+#include "TAD_SIOTime.h"
+#include "TAD_LCD.h"
 
 //Configuramos el Oscilador a 40MHz
 #pragma config OSC = HSPLL
@@ -37,10 +40,16 @@ void main(void) {
     JSK_Init();
     BTN_Init();
     HB_Init();
+    TIME_Init();
+    LcInit(2, 16);
+    LcPutString("Hello");
+    LcCursorOff();
 	while(1){
         HB_Motor();
         JSK_Motor();
         BTN_Motor();
+        IFC_Motor();
+        TIME_Motor();
 	}
 	return;
 }
