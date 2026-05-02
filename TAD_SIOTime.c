@@ -28,6 +28,26 @@ void TIME_SendChar(char c) {
     }
 }
 
+char TIME_GetMonth(){
+    return 0;
+}
+
+char TIME_GetDay(){
+    return 0;
+}
+
+char TIME_GetHour(){
+    return 0;
+}
+
+char TIME_GetMinute(){
+    return 0;
+}
+
+char TIME_GetSecond(){
+    return 0;
+}
+
 void TIME_Motor(void) {
     static char stateRX = 0;
     static char stateTX = 0;
