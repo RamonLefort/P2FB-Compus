@@ -52,7 +52,7 @@ void TIME_Motor(void) {
     static char stateRX = 0;
     static char stateTX = 0;
 
-    //Recepción
+    //RecepciÃ³n
     switch(stateRX) {
         case 0:
             if (IN == START_BIT) {
@@ -90,7 +90,7 @@ void TIME_Motor(void) {
             break;
     }
 
-    //Transmisión
+    //TransmisiÃ³n
     switch(stateTX) {
         case 0:
             if (tx_busy) {
@@ -127,4 +127,78 @@ void TIME_Motor(void) {
             }
             break;
     }
+}
+
+void SIO_CLOCK_Motor(){
+    static unsigned char clock_state = 0;
+    static unsigned char segs = 0;
+    static unsigned char mins = 0;
+    static unsigned char hours = 0;
+    static unsigned char days = 1;
+    static unsigned char months = 1;
+    static unsigned char years = 0;
+    
+    
+    switch(clock_state){
+        case 0:
+            if(getTics(clockSioTimer) >= 1000){
+                clock_state = 1;
+            }
+            break;
+        case 1:
+            if(segs >= 59){
+                segs = 0;
+                clock_state = 2;
+            }
+            else{
+                segs++;
+                clock_state = 0;
+            }
+            break;
+        case 2:
+            if(mins >= 59){
+                mins = 0;
+                clock_state = 3;
+            }
+            else{
+                mins++;
+                clock_state = 0;
+            }
+            break;
+        case 3:
+            if(hours >= 23){
+                hours = 0;
+                clock_state = 4;
+            }
+            else{
+                hours++;
+                clock_state = 0;
+            }
+            break;
+        case 4:
+            if((days >= 28 && months == 2) || (days >= 30 && months % 2 == 0) || (days >= 31 && months % 2 == 1)){
+                days = 1;
+                clock_state = 5;
+            }
+            else{
+                days++;
+                clock_state = 0;
+            }
+            break;
+        case 5:
+            if(months >= 12){
+                months = 1;
+                clock_state = 6;
+            }
+            else{
+                months++;
+                clock_state = 0;
+            }
+            break;
+        case 6:
+            years++;
+            clock_state = 0;
+            break; 
+    }
+    
 }
