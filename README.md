@@ -8,7 +8,7 @@ A continuación se detalla el listado de TADs. Marca las tareas con una `x` (eje
 
 ### Capa de Abstracción de Hardware (HAL)
 - [x] **TAD SIOInt**: Gestión de interrupciones de Entrada/Salida serie (UART).
-- [ ] **TAD SIOTime**: Control de tiempos y timeouts para comunicación serie.
+- [x] **TAD SIOTime**: Control de tiempos y timeouts para comunicación serie.
 - [x] **TAD HB**: Implementación del *Heartbeat* para monitorización del estado del sistema.
 - [x] **TAD EEPROM**: Gestión de lectura/escritura en memoria no volátil.
 - [x] **TAD TIMER**: Abstracción de temporizadores de hardware para la base de tiempos.
@@ -22,4 +22,4 @@ A continuación se detalla el listado de TADs. Marca las tareas con una `x` (eje
 
 ### Capa de Aplicación
 - [ ] **TAD ORGANIZER**: Planificador de tareas (Scheduler) para la ejecución cooperativa.
-- [ ] **TAD ANIMALS**: Lógica de dominio específica para la gestión de entidades "Animals".
+- [x] **TAD ANIMALS**: Lógica de dominio específica para la gestión de entidades "Animals".
