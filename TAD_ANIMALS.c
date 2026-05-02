@@ -1,21 +1,23 @@
+#include <xc.h>
 #include "TAD_ANIMALS.h"
-#include "TIMER.h"
+#include "TAD_TIMER.h"
+#include "TAD_SIOTime.h"
 
 #define MAX_ANIMALS 24
 #define NUM_TYPES 4
 
-struct Animals{
-    char number = 0;
-    char type = 0;
-    char state = 0;
-    unsigned char last_sleep_day = 0;
-    unsigned char last_sleep_month = 0;
-    unsigned char last_sleep_hour = 0;
-    unsigned char last_sleep_minute = 0;
-    unsigned char last_sleep_second = 0;
-};
+typedef struct{
+    char number;
+    char type;
+    char state;
+    unsigned char last_sleep_day;
+    unsigned char last_sleep_month;
+    unsigned char last_sleep_hour;
+    unsigned char last_sleep_minute;
+    unsigned char last_sleep_second;
+} Animals;
 
-typedef Animals animals[MAX_ANIMALS];
+static Animals animals[MAX_ANIMALS];
 
 static unsigned char total_animals = 0;
 static unsigned char count_by_type[NUM_TYPES];
@@ -27,18 +29,21 @@ static unsigned char num_vacas = 1;
 static unsigned char num_cerdos = 1;
 static unsigned char num_caballos = 1;
 static unsigned char num_gallinas = 1;
-unsigned char TimerGenVacas, TimerGenCerdos, TimerGenGallinas, TimerGenCaballos;
 unsigned char TimerProdVacas, TimerProdCerdos, TimerProdGallinas, TimerProdCaballos;
 static unsigned char num_milk = 0;
 static unsigned char num_eggs = 0;
 static unsigned char num_brush = 0;
 static unsigned char num_meat = 0;
 static unsigned char rebellion = 0;
+static unsigned char last_gen_sec_V = 0;
+static unsigned char last_gen_sec_G = 0;
+static unsigned char last_gen_sec_C = 0;
+static unsigned char last_gen_sec_P = 0;
 
 void ANIMALS_Init(void){
     unsigned char i;
 
-    total_animals = 0;
+    total_animals = last_gen_sec_V = last_gen_sec_G = last_gen_sec_C = last_gen_sec_P = 0;
 
     for (i = 0; i < NUM_TYPES; i++) {
         count_by_type[i] = 0;
@@ -46,15 +51,14 @@ void ANIMALS_Init(void){
     
     for (i = 0; i < MAX_ANIMALS; i++) {
         animals[i].number = 0;
-        animals[i].type = "V"; // V vaca, G per gallines, C per cavalls, P per porcs (EEPROM)
-        
-        animals[i].state = "A"; // A for Awake, S for Sleep
+        animals[i].type = 'V'; // V vaca, G per gallines, C per cavalls, P per porcs (EEPROM)
+        animals[i].state = 'A'; // A for Awake, S for Sleep
 
-        animals[i].last_sleep_day = 0; //EEPROM
-        animals[i].last_sleep_month = 0; //EEPROM
-        animals[i].last_sleep_hour = 0; //EEPROM
-        animals[i].last_sleep_minute = 0; //EEPROM
-        animals[i].last_sleep_second = 0; //EEPROM
+        animals[i].last_sleep_day = 0;
+        animals[i].last_sleep_month = 0;
+        animals[i].last_sleep_hour = 0;
+        animals[i].last_sleep_minute = 0;
+        animals[i].last_sleep_second = 0;
     }
 }
 
@@ -64,22 +68,22 @@ void start_rebellion(){
 
 void Create_Production_Timer(unsigned char type){
     switch(type){
-        case "V":
+        case 'V':
             if(num_vacas == 1){
                 TI_NewTimer(&TimerProdVacas);
             }
             break;
-        case "G":
+        case 'G':
             if(num_gallinas == 1){
                 TI_NewTimer(&TimerProdGallinas);
             }
             break;
-        case "C":
+        case 'C':
             if(num_caballos == 1){
                 TI_NewTimer(&TimerProdCaballos);
             }
             break;
-        case "P":
+        case 'P':
             if(num_cerdos == 1){
                 TI_NewTimer(&TimerProdCerdos);
             }
@@ -90,175 +94,168 @@ void Create_Production_Timer(unsigned char type){
 
 // SOLO DEBE CONTAR EN PRODUCCION CUANDO ESTE DESPIERTO O SIMPLEMENTE SI EN EL MOMENTO DE LOS 2 MINS SI ESTA DORMIDO NO PRODUCE?
 void Check_Prod_time(unsigned char type){
-    unsigned char tics_meat = 66666;
-    unsigned char tics_milk = 66666; // los tics se hardcodean
-    unsigned char tic_eggs = 66666;
-    unsigned char tics_brush = 66666;
+    unsigned char tics_meat = 255;
+    unsigned char tics_milk = 255; // los tics se hardcodean
+    unsigned char tic_eggs = 255;
+    unsigned char tics_brush = 255;
     
     switch(type){
-        case "V":
-            if(TI_GetTics(TimerProdVacas) = tics_milk && !rebellion){
+        case 'V':
+            if(TI_GetTics(TimerProdVacas) == tics_milk && !rebellion){
                 num_milk += awake_vacas;
             }
             break;
-        case "G":
-            if(TI_GetTics(TimerProdGallinas) = tic_eggs && !rebellion){
+        case 'G':
+            if(TI_GetTics(TimerProdGallinas) == tic_eggs && !rebellion){
                 num_eggs += awake_gallinas;
             }
             break;
-        case "C":
-            if(TI_GetTics(TimerProdCaballos) = tics_brush && !rebellion){
-                num_brush +=  awake_caballos
+        case 'C':
+            if(TI_GetTics(TimerProdCaballos) == tics_brush && !rebellion){
+                num_brush += awake_caballos;
             }
             break;
-        case "P":
-            if(TI_GetTics(&TimerProdCerdos) = tics_meat && !rebellion){
+        case 'P':
+            if(TI_GetTics(TimerProdCerdos) == tics_meat && !rebellion){
                 num_meat += awake_cerdos;
             }
             break;     
     }  
 }
 
-
-void Create_Generation_Timer(type){
-    switch(type){
-        case "V":
-            if(num_vacas == 1){
-                TI_NewTimer(&TimerGenVacas);
-            }
-            break;
-        case "G":
-            if(num_gallinas == 1){
-                TI_NewTimer(&TimerGenGallinas);
-            }
-            break;
-        case "C":
-            if(num_caballos == 1){
-                TI_NewTimer(&TimerGenCaballos);
-            }
-            break;
-        case "P":
-            if(num_cerdos == 1){
-                TI_NewTimer(&TimerGenCerdos);
-            }
-            break;     
-    }
+void ANIMALS_PutGenerationTimes(unsigned char timeVaca, unsigned char timeGallina, unsigned char timeCavallo, unsigned char timeCerdo){
+    count_by_type[0] = timeVaca;
+    count_by_type[1] = timeGallina;
+    count_by_type[2] = timeCavallo;
+    count_by_type[3] = timeCerdo;
 }
 
-
-unsigned char Check_generation_time(unsigned char type, unsigned char input_interface_time){
-    unsigned char isTime = 0;
-    
-    switch(type){
-        case "V":
-            if(TI_GetTics(TimerGenVacas)*1000 = input_interface_time){
-                isTime = 1;
-            }
-            break;
-        case "G":
-            if(TI_GetTics(TimerGenGallinas)*1000 = input_interface_time){
-                isTime = 1;
-            }
-            break;
-        case "C":
-            if(TI_GetTics(TimerGenCaballos)*1000 = input_interface_time){
-                isTime = 1;
-            }
-            break;
-        case "P":
-            if(TI_GetTics(&TimerGenCerdos)* 1000 = input_interface_time){
-                isTime = 1;
-            }
-            break;     
-    }
-    return isTime;
+void awake_animal(unsigned char index){
+    animals[index].last_sleep_month = TIME_GetMonth();
+    animals[index].last_sleep_day = TIME_GetDay();
+    animals[index].last_sleep_hour = TIME_GetHour();
+    animals[index].last_sleep_minute = TIME_GetMinute();
+    animals[index].last_sleep_second = TIME_GetSecond();
+    animals[index].state = 'A';
 }
-
 
 // Se entra cada vez que el timer llega a los tiempos de generacion
 void Animal_Generation(unsigned char index, unsigned char type){ 
     // por default los animales estan despiertos y son vacas
     total_animals++;
-    annimal[index]type = type;
+    animals[index].type = type;
     switch(type){
-        
-        case "V":
+        case 'V':
             if(num_vacas < 3){
                 awake_vacas++;
-                input_actual_time(animals, index);
+                awake_animal(index);
                 animals[index].number = num_vacas++;  
+                animals[index].type = 'V';
             }
             break;
         
-        case "G":
+        case 'G':
             if(num_gallinas < 3){
                 awake_gallinas++;
-                input_actual_time(animals, index);
+                awake_animal(index);
                 animals[index].number = num_gallinas++;  
-                animals[index].type = "G";
+                animals[index].type = 'G';
             }
             break;
                 
-        case "P":
+        case 'P':
             if(num_cerdos < 3){
                 awake_cerdos++;
-                input_actual_time(animals, index);
+                awake_animal(index);
                 animals[index].number = num_cerdos++;  
-                animals[index].type = "P";
+                animals[index].type = 'P';
             }
             break; 
             
-        case "C":
+        case 'C':
             if(num_caballos < 3){
                 awake_caballos++;
-                input_actual_time(animals, index);
+                awake_animal(index);
                 animals[index].number = num_caballos++;  
-                animals[index].type = "C";
+                animals[index].type = 'C';
             }
             break;     
     }
 }
 
+void Check_generation_time(unsigned char type, unsigned char interval_needed) {
+    unsigned char current_sec = TIME_GetSecond();
+    unsigned char start_sec;
+    unsigned char elapsed;
 
-void Check_if_put_sleep(unsigned char index, unsigned char imported_value){
-    if(animal[index].last_sleep_month >= imported_value_month || animal[index].last_sleep_year >= imported_value_year || animal[index].last_sleep_minutes - imported_value_minutes <= 2){
-        if(imported_value_minute - animal[index].last_sleep_minutes <= 2 && imported_value_seconds <  animal[index].last_sleep_seconds){
+    // 1. Seleccionar el tiempo de referencia según el tipo
+    switch(type) {
+        case 0: start_sec = last_gen_sec_V; break;
+        case 1: start_sec = last_gen_sec_G; break;
+        case 2: start_sec = last_gen_sec_C; break;
+        case 3: start_sec = last_gen_sec_P; break;
+        default: return;
+    }
+
+    // 2. Cálculo del tiempo transcurrido (Aritmética modular base 60)
+    if (current_sec >= start_sec) {
+        elapsed = current_sec - start_sec;
+    } else {
+        elapsed = (current_sec + 60) - start_sec;
+    }
+
+    // 3. Si ha pasado el tiempo, ejecutamos la función específica y actualizamos
+    if (elapsed >= interval_needed) {
+        
+        switch(type) {
+            case 0: 
+                Animal_Generation(total_animals, 'V');
+                last_gen_sec_V = current_sec; 
+                break;
+            case 1: 
+                Animal_Generation(total_animals, 'G'); 
+                last_gen_sec_G = current_sec; 
+                break;
+            case 2: 
+                Animal_Generation(total_animals, 'C');
+                last_gen_sec_C = current_sec;
+                break;
+            case 3: 
+                Animal_Generation(total_animals, 'P');
+                last_gen_sec_P = current_sec; 
+                break;
+        }
+    }
+}
+
+void Check_if_put_sleep(unsigned char index){
+    if(animals[index].last_sleep_month >= TIME_GetMonth() || animals[index].last_sleep_day >= TIME_GetDay() || animals[index].last_sleep_hour - TIME_GetHour() <= 2){
+        if(TIME_GetMinute() - animals[index].last_sleep_minute <= 2 && TIME_GetSecond() < animals[index].last_sleep_second){
            return;
         } 
     }
-    animal[index].state = "S";
-    switch(animal[index].type){
-        case "V":
+    animals[index].state = 'S';
+    switch(animals[index].type){
+        case 'V':
             awake_vacas--;
             break;
-        case "C":
+        case 'C':
             awake_caballos--;
             break;
-        case "G":
+        case 'G':
             awake_gallinas--;
             break;
-        case "P":
+        case 'P':
             awake_cerdos--;
             break;
     }
 }
 
-
-void awake_animal(unsigned char index){
-    animal[index].last_sleep_day = 0; // no es 0, es valor input del SIO timer 
-    animal[index].last_sleep_month = 0;// no es 0, es valor input del SIO timer 
-    animal[index].last_sleep_hour = 0;// no es 0, es valor input del SIO timer 
-    animal[index].last_sleep_minute = 0;// no es 0, es valor input del SIO timer 
-    animal[index].last_sleep_second = 0;// no es 0, es valor input del SIO timer 
-    animals[index].state = "A";
-}
-
-
-void consume_area(interface_option){
+void ANIMALS_Consume(unsigned char interface_option){
     switch(interface_option){
         case 0:
             if(num_eggs >= 1){
-                num eggs--;
+                num_eggs--;
                 // mostrar por LCD
             }
             break;
@@ -289,25 +286,24 @@ void consume_area(interface_option){
     }
 }
 
-void motor_Animals(){
+void ANIMALS_Motor(){
     static unsigned char state = 0;
     static unsigned char i = 0;
     
     switch(state){
         case 0:
             if(i < total_animals){
-                Check_if_put_sleep(i); // hace falta aÃ±adir los valores de input de la SIO
+                Check_if_put_sleep(i); // hace falta añadir los valores de input de la SIO
                 i++;
-            }
-            else{
+            }else{
                 state = 1;
                 i = 0;
             }
             break;
         case 1:
             if(i < NUM_TYPES){
-                Check_generation_time(type,input_interface_time);
-                Check_Prod_time(type);
+                Check_generation_time(i, count_by_type[i]);
+                Check_Prod_time(i);
             }
             else{
                 state = 0;
@@ -316,7 +312,3 @@ void motor_Animals(){
             break;
     }
 }
-
-
-
-

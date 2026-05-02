@@ -6,9 +6,20 @@
 #define ACT_HIGH 150
 #define ACT_LOW  100
 
+static unsigned char ligth;
+
 void JSK_Init(){
     TRISAbits.RA0 = 1; //AN0 - Eje X
     TRISAbits.RA1 = 1; //AN1 - Eje Y
+    ligth = 0;
+}
+
+char JSK_getLight(){
+    return ligth;
+}
+
+void PutLight(char mostra){
+    ligth = mostra;
 }
 
 void CheckMove(char mostra, char i) {
@@ -66,6 +77,19 @@ void JSK_Motor(void) {
         case 3:
             if (ADC_HiHaMostra()) {
                 CheckMove(ADC_GetMostra(), 1);
+                state = 4;
+            }
+            break;
+            
+        case 4: //Light
+            ADC_PickChannel(2);
+            ADC_IniciaConversio();
+            state = 5;
+            break;
+
+        case 5:
+            if (ADC_HiHaMostra()) {
+                PutLight(ADC_GetMostra());
                 state = 0;
             }
             break;
