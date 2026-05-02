@@ -2,6 +2,7 @@
 #include "TAD_ANIMALS.h"
 #include "TAD_TIMER.h"
 #include "TAD_SIOTime.h"
+#include "TAD_EEPROM.h"
 
 #define MAX_ANIMALS 24
 #define NUM_TYPES 4
@@ -54,11 +55,11 @@ void ANIMALS_Init(void){
         animals[i].type = 'V'; // V vaca, G per gallines, C per cavalls, P per porcs (EEPROM)
         animals[i].state = 'A'; // A for Awake, S for Sleep
 
-        animals[i].last_sleep_day = 0;
-        animals[i].last_sleep_month = 0;
-        animals[i].last_sleep_hour = 0;
-        animals[i].last_sleep_minute = 0;
-        animals[i].last_sleep_second = 0;
+        animals[i].last_sleep_day = 0; //EEPROM
+        animals[i].last_sleep_month = 0; //EEPROM
+        animals[i].last_sleep_hour = 0;  //EEPROM
+        animals[i].last_sleep_minute = 0;  //EEPROM
+        animals[i].last_sleep_second = 0;  //EEPROM
     }
 }
 
@@ -188,7 +189,7 @@ void Check_generation_time(unsigned char type, unsigned char interval_needed) {
     unsigned char start_sec;
     unsigned char elapsed;
 
-    // 1. Seleccionar el tiempo de referencia según el tipo
+    // 1. Seleccionar el tiempo de referencia segï¿½n el tipo
     switch(type) {
         case 0: start_sec = last_gen_sec_V; break;
         case 1: start_sec = last_gen_sec_G; break;
@@ -197,14 +198,14 @@ void Check_generation_time(unsigned char type, unsigned char interval_needed) {
         default: return;
     }
 
-    // 2. Cálculo del tiempo transcurrido (Aritmética modular base 60)
+    // 2. Cï¿½lculo del tiempo transcurrido (Aritmï¿½tica modular base 60)
     if (current_sec >= start_sec) {
         elapsed = current_sec - start_sec;
     } else {
         elapsed = (current_sec + 60) - start_sec;
     }
 
-    // 3. Si ha pasado el tiempo, ejecutamos la función específica y actualizamos
+    // 3. Si ha pasado el tiempo, ejecutamos la funciï¿½n especï¿½fica y actualizamos
     if (elapsed >= interval_needed) {
         
         switch(type) {
@@ -286,6 +287,39 @@ void ANIMALS_Consume(unsigned char interface_option){
     }
 }
 
+void save_data_type(unsigned char index,unsigned char addrs){
+    EE_Write(addrs,animals[index].type);
+    EE_Write(index,animals[index].last_sleep_day);
+    EE_Write(index,animals[index].last_sleep_month);
+    EE_Write(index,animals[index].last_sleep_hour);
+    EE_Write(index,animals[index].last_sleep_minute);
+    EE_Write(index,animals[index].last_sleep_second);
+}
+
+void save_data_day(unsigned char index,unsigned char addrs){
+    EE_Write(index,animals[index].last_sleep_day);
+}
+
+void save_data_month(unsigned char index,unsigned char addrs){
+    EE_Write(index,animals[index].last_sleep_month);
+}
+
+void save_data_hour(unsigned char index,unsigned char addrs){
+    EE_Write(index,animals[index].last_sleep_hour);
+}
+
+void save_data_min(unsigned char index,unsigned char addrs){
+    EE_Write(index,animals[index].last_sleep_minute);
+}
+
+void save_data_sec(unsigned char index,unsigned char addrs){
+    EE_Write(index,animals[index].last_sleep_second);
+}
+
+void load_actual_data(unsigned char addrl){
+    EE_Read(index);
+}
+
 void ANIMALS_Motor(){
     static unsigned char state = 0;
     static unsigned char i = 0;
@@ -293,7 +327,7 @@ void ANIMALS_Motor(){
     switch(state){
         case 0:
             if(i < total_animals){
-                Check_if_put_sleep(i); // hace falta añadir los valores de input de la SIO
+                Check_if_put_sleep(i); // hace falta aï¿½adir los valores de input de la SIO
                 i++;
             }else{
                 state = 1;
