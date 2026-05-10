@@ -30,6 +30,8 @@ void ANIMALS_setTotalAnimals(unsigned char value);
 
 void ANIMALS_Awake(unsigned char index);
 
+void ANIMALS_Rebuild(void);
+
 void ANIMALS_StopRebellion();
 
 void ANIMALS_StartRebellion();

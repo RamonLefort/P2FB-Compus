@@ -5,7 +5,7 @@
 
 #define ACT_HIGH 200
 #define ACT_LOW 50
-#define LIGHT_MIN_VALUE 50
+#define LIGHT_MIN_VALUE 5
 
 static unsigned char ligth;
 static unsigned char canal_actual = 0; // 0:X, 1:Y, 2:Light

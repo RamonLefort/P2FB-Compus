@@ -292,7 +292,9 @@ void LCD_ResetLCD(){
 }
 
 void LCD_PushMsg(unsigned char tipo, unsigned char id, unsigned char v1, unsigned char v2) {
-    if (n_msgs >= 3) return;
+    if (n_msgs >= 3){
+        return;
+    }
 
     // Evitar duplicar el mensaje de bienvenida en la cola
     if (tipo == 0) {

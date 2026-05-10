@@ -114,8 +114,6 @@ unsigned char TIME_HasElapsed(unsigned long start_time, unsigned char timeout_se
     return 0;
 }
 
-static const unsigned int dias_acumulados[12] = {0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334};
-
 // Función de validación y parseo (Devuelve 1 si es válido, 0 si hay error)
 unsigned char TIME_ParseDateTime(void) {
     // 1. Verificación estructural rápida (Costo: 5 bytes de comprobación)
@@ -145,7 +143,8 @@ unsigned char TIME_ParseDateTime(void) {
     mins = min; 
     segs = s;
     
-    unsigned int total_dias = dias_acumulados[m - 1] + (d - 1);
+    // d: día (1-30), m: mes (1-12)
+    unsigned int total_dias = (unsigned int)(m - 1) * 30 + (d - 1);
     
     // Matemática a 32 bits forzada (Sufijo UL) sino ponemos UL la multiplicación estará corrupta porque la ALU trabaja con 16 bits
     timestamp = ((unsigned long)total_dias * 86400UL) + ((unsigned long)h * 3600UL) + ((unsigned long)min * 60UL) + (unsigned long)s;

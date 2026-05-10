@@ -9,6 +9,8 @@
 
 static Animals animals[MAX_ANIMALS];
 static unsigned char total_animals = 0;
+static unsigned char rebuild_idx = 0, eeprom_read = 0;
+static unsigned char state = 0, i = 0;
 
 // Arrays de estado: 0:Vaca, 1:Gallina, 2:Cavall, 3:Porc
 static unsigned char num_especie[4];
@@ -32,7 +34,7 @@ void ANIMALS_Init(void) {
     unsigned long current_time = TIME_GetTimestamp();
     for (unsigned char i = 0; i < 4; i++) {
         time_generation[i] = 0;
-        num_especie[i] = 1;
+        num_especie[i] = 0;
         awake_especie[i] = 0;
         productos[i] = 0;
         
@@ -51,15 +53,15 @@ Animals* ANIMALS_GetAnimals(void) {
     return animals; 
 }
 
-unsigned char ANIMALS_GetTotalAnimals(void) { 
+unsigned char ANIMALS_GetTotalAnimals(void){
     return total_animals; 
 }
 
-unsigned char* ANIMALS_GetNumEspecie() { 
+unsigned char* ANIMALS_GetNumEspecie(){
     return num_especie; 
 }
 
-unsigned char* ANIMALS_GetAwakeEspecie() { 
+unsigned char* ANIMALS_GetAwakeEspecie(){
     return awake_especie; 
 }
 
@@ -123,12 +125,11 @@ void Animal_Generation(unsigned char type_idx) {
     Animals *a = &animals[total_animals];
     a->type = tipos_letra[type_idx];
     a->number = num_especie[type_idx] + 1;
-    LCD_PushMsg(2, type_idx, num_especie[type_idx], 0);
+    LCD_PushMsg(2, type_idx, num_especie[type_idx] + 1, 0);
     EEMOTOR_TriggerWriteAll();
 
     num_especie[type_idx]++;
     ANIMALS_Awake(total_animals);
-    awake_especie[type_idx]++;
     total_animals++;
 }
 
@@ -174,7 +175,6 @@ void Check_if_put_sleep(unsigned char index) {
 }
 
 void ANIMALS_Motor(void) {
-    static unsigned char state = 0, i = 0;
     
     switch(state) {
         case 0: // Chequear sueño (1 animal por vuelta cooperativa)
@@ -203,14 +203,61 @@ void ANIMALS_Motor(void) {
             
             // Avanzamos al siguiente tipo de animal de forma cíclica
             if (++i >= 4) { 
-                i = 0; 
-                state = 0; 
+                i = 0;
+                if (eeprom_read == 1) {
+                    state++;
+                }else{
+                    state = 0;
+                }
+            }
+            break;
+        case 2: // --- ESTADO 2: REBUILD COOPERATIVO (NUEVO) ---
+            // Este estado solo se activa externamente tras cargar la EEPROM
+            if (rebuild_idx == 0 && eeprom_read == 1) {
+                // Reset de contadores solo al empezar el barrido
+                num_especie[0] = num_especie[1] = num_especie[2] = num_especie[3] = awake_especie[0] = awake_especie[1] = awake_especie[2] = awake_especie[3] = 0;
+            }
+
+            if (rebuild_idx < total_animals) {
+                // Procesamos UN animal en esta llamada
+                unsigned char t_idx = 0;
+                switch(animals[rebuild_idx].type) {
+                    case 'V':
+                        t_idx = 0; 
+                        break;
+                    case 'G':
+                        t_idx = 1;
+                        break;
+                    case 'C':
+                        t_idx = 2;
+                        break;
+                    case 'P':
+                        t_idx = 3;
+                        break;
+                }
+                num_especie[t_idx]++;
+                if (animals[rebuild_idx].state == 'A'){
+                    awake_especie[t_idx]++;
+                }
+                
+                rebuild_idx++; // En la siguiente vuelta del main() procesaremos el siguiente
+            } else {
+                rebuild_idx = 0;
+                eeprom_read = 0;
+                state = 0;
             }
             break;
     }
 }
 
-void ANIMALS_PutTime(unsigned char idx, unsigned char t) { 
+void ANIMALS_Rebuild(void) {
+    rebuild_idx = 0;
+    eeprom_read = 1;
+    i = 0;
+    state = 0;
+}
+
+void ANIMALS_PutTime(unsigned char idx, unsigned char t) {
     time_generation[idx] = t;
     // Al configurar un nuevo tiempo, reiniciamos el contador para que empiece desde cero
     last_gen_timer[idx] = TIME_GetTimestamp();

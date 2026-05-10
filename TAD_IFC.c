@@ -17,6 +17,7 @@ Animals* animals;
 const char* nombres[] = {"VACA\0", "GALLINA\0", "CAVALL\0", "PORC\0"};
 const char* estados[] = {"AWAKE\0", "SLEEP\0"};
 const unsigned char map_prod[] = {0, 3, 1, 2};
+const unsigned char map_gen[] = {0, 3, 2, 1};
 static unsigned char Timer;
 
 void IFC_Init(){
@@ -28,13 +29,6 @@ void AddChar(char value){
     comando[Inicio++] = value;
     Inicio &= MASK_RX;
     Quants++;
-}
-
-char GetChar(){
-    char value = comando[Fin++];
-    Fin &= MASK_RX;
-    Quants--;
-    return value;
 }
 
 unsigned char atou(const char* s) {
@@ -171,7 +165,7 @@ void IFC_Motor(){
                             FarmName[16] = '\0';
                             LCD_PushMsg(0, 0, TIME_GetDay(), TIME_GetMonth());
                         } else if (word >= 1 && word <= 4) {
-                            ANIMALS_PutTime(word - 1, atou(str));
+                            ANIMALS_PutTime(map_gen[word - 1], atou(str));
                         }
                         word++;
                         i = 0;

@@ -23,7 +23,7 @@ void EEMOTOR_TriggerWriteAll(void) {
 }
 
 void EEMOTOR_TriggerReadAll(void) {
-    if (ee_state == 0) ee_state = 5;
+    if (ee_state == 0) ee_state = 4;
 }
 
 // ==========================================
@@ -31,7 +31,6 @@ void EEMOTOR_TriggerReadAll(void) {
 // ==========================================
 
 void EEMOTOR_Task(void) {
-    static char first = 1;
     // REGLA DE ORO FÍSICA: Si el hardware de la EEPROM está 
     // ocupado quemando un byte, no hacemos nada y cedemos la CPU.
     if (EE_IsWriting()) return;
@@ -48,16 +47,10 @@ void EEMOTOR_Task(void) {
             // Para resetear la granja, basta con decir que hay 0 animales.
             // Los datos viejos se quedarán en memoria como "basura", pero 
             // el sistema los ignorará porque total_animals = 0.
-            if(i < 0 || i > 4){
-                EE_Write(i, 1);
-            }else{
-                EE_Write(i, 0);
-            }
-            i++;
-            if(i >= 255){
+            EE_Write(i, 0);
+            if(++i == 0) { // Al dar la vuelta de 255 a 0
                 ANIMALS_Init();
-                i = 0;
-                ee_state--;
+                ee_state = 0;
             }
             break;
 
@@ -65,12 +58,14 @@ void EEMOTOR_Task(void) {
         // FUNCIONALIDAD 2: ESCRIBIR
         // ----------------------------------
         case 2:
-            EE_Write(0x00, ANIMALS_GetTotalAnimals()); // Guardamos el total
-            // Preparamos para volcar num_especie (4 bytes)
-            byte_ptr = (unsigned char*)ANIMALS_GetNumEspecie(); 
-            bytes_left = 4;
-            ee_addr = 0x01;
-            ee_state++; 
+            // 1. Guardamos el dato raíz
+            EE_Write(0x00, ANIMALS_GetTotalAnimals());
+            
+            // 2. Preparamos puntero al array de animales
+            byte_ptr = (unsigned char*)ANIMALS_GetAnimals();
+            bytes_left = ANIMALS_GetTotalAnimals() * sizeof(Animals);
+            ee_addr = 0x01; // El array empieza justo después del total
+            ee_state = 3;
             break;
 
         case 3:
@@ -78,83 +73,34 @@ void EEMOTOR_Task(void) {
                 EE_Write(ee_addr++, *byte_ptr++);
                 bytes_left--;
             } else {
-                // Al terminar num_especie, pasamos a awake_especie (dirección 0x05)
-                if (ee_addr == 0x05) {
-                    byte_ptr = (unsigned char*)ANIMALS_GetAwakeEspecie();
-                    bytes_left = 4;
-                    ee_state = 3;
-                } else {
-                    // Finalmente, el array de animales empieza en 0x09
-                    byte_ptr = (unsigned char*)ANIMALS_GetAnimals();
-                    bytes_left = ANIMALS_GetTotalAnimals() * sizeof(Animals);
-                    ee_addr = 0x09;
-                    ee_state++;
-                }
-            }
-            break;
-
-        case 4:
-            if (bytes_left > 0) {
-                EE_Write(ee_addr++, *byte_ptr++);
-                bytes_left--;
-            } else {
-                ee_state = 0; // Terminado
+                ee_state = 0; // Guardado finalizado
             }
             break;
 
         // ----------------------------------
         // FUNCIONALIDAD 3: LEER
         // ----------------------------------
-        case 5:
-            // 1. Leemos el total de animales
+        case 4:
+            // 1. Leemos el total
             unsigned char num = EE_Read(0x00);
-            if (num > 24){
-                num = 0; // Seguridad
-            }
+            if (num > 24) num = 0; // Validamos integridad básica
+            
             ANIMALS_setTotalAnimals(num);
 
-            // 2. Preparamos para leer num_especie (4 bytes)
-            byte_ptr = (unsigned char*)ANIMALS_GetNumEspecie(); 
-            bytes_left = 4;
+            // 2. Preparamos para volcar el bloque de animales a RAM
+            byte_ptr = (unsigned char*)ANIMALS_GetAnimals();
+            bytes_left = num * sizeof(Animals);
             ee_addr = 0x01;
-            ee_state++;
+            ee_state = 5;
             break;
 
-        case 6:
+        case 5:
             if (bytes_left > 0) {
                 *byte_ptr++ = EE_Read(ee_addr++);
                 bytes_left--;
             } else {
-                // 3. Preparamos para leer awake_especie (4 bytes)
-                byte_ptr = (unsigned char*)ANIMALS_GetAwakeEspecie();
-                bytes_left = 4;
-                ee_addr = 0x05;
-                ee_state++;
-            }
-            break;
-
-        case 7:
-            if (bytes_left > 0) {
-                *byte_ptr++ = EE_Read(ee_addr++);
-                bytes_left--;
-            } else {
-                // 4. Finalmente, leemos el array de animales
-                byte_ptr = (unsigned char*)ANIMALS_GetAnimals();
-                bytes_left = ANIMALS_GetTotalAnimals() * sizeof(Animals);
-                ee_addr = 0x09;
-                ee_state++;
-            }
-            break;
-            
-        case 8:
-            // Lectura cooperativa estricta: 1 byte por cada ciclo del procesador.
-            // Garantiza un tiempo de ejecución O(1) de ~2 microsegundos por llamada,
-            // eliminando el Jitter que podría desincronizar la SIO por software.
-            if (bytes_left > 0) {
-                *byte_ptr++ = EE_Read(ee_addr++); //Escribe en el array de animales directamente, ya que nos pasan el puntero
-                bytes_left--;
-            } else {
-                // Solo cuando el contador llega a 0, liberamos la máquina de estados
+                // AQUÍ: Disparamos la reconstrucción cooperativa en el TAD_ANIMALS
+                ANIMALS_Rebuild(); 
                 ee_state = 0; 
             }
             break;
