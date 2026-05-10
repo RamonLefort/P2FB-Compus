@@ -21,5 +21,5 @@ A continuación se detalla el listado de TADs. Marca las tareas con una `x` (eje
 - [x] **TAD Button**: Lógica de *debouncing* (antirrebotes) y gestión de eventos de pulsadores.
 
 ### Capa de Aplicación
-- [ ] **TAD ORGANIZER**: Planificador de tareas (Scheduler) para la ejecución cooperativa.
+- [x] **TAD ORGANIZER**: Planificador de tareas (Scheduler) para la ejecución cooperativa.
 - [x] **TAD ANIMALS**: Lógica de dominio específica para la gestión de entidades "Animals".
