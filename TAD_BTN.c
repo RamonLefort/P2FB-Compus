@@ -18,42 +18,35 @@ void BTN_Init(){
     ButtonState = 0;
 }
 
-void BTN_Motor(void){
-	static char state = 0;
+void BTN_Motor(void) {
+    static unsigned char state = 0;
+    
+    switch(state) {
+        case 0: // Esperando pulsación
+            if (BUTTON == PRESSED) {
+                if (TI_GetTics(TimRebots) >= TREBOTS) {
+                    ButtonState = ON;
+                    SIO_PutChar('S');
+                    SIO_PutChar('\r');
+                    SIO_PutChar('\n');
+                    TI_ResetTics(TimRebots); // Reset para el siguiente cambio
+                    state++;
+                }
+            } else {
+                TI_ResetTics(TimRebots); // Si se suelta, reseteamos
+            }
+            break;
 
-	switch(state) {
-		case 0:
-			if (BUTTON == PRESSED) {
-				TI_ResetTics(TimRebots);
-				state = 1;
-			}
-		break;
-		case 1:
-			if (TI_GetTics(TimRebots) >= TREBOTS && BUTTON == PRESSED) {
-				ButtonState = ON;
-                SIO_PutChar('S');
-                SIO_PutChar('\r');
-                SIO_PutChar('\n');
-				state = 2;
-			}
-			else if (TI_GetTics(TimRebots) >= TREBOTS && BUTTON != PRESSED) {
-				state = 0;
-			}
-		break;
-		case 2:
-			if (BUTTON != PRESSED) {
-				TI_ResetTics(TimRebots);
-				state = 3;
-			}
-		break;
-		case 3:
-			if (TI_GetTics(TimRebots) >= TREBOTS && BUTTON == PRESSED) {
-				state = 2;
-			}
-			else if (TI_GetTics(TimRebots) >= TREBOTS && BUTTON != PRESSED) {
-				ButtonState = OFF;
-				state = 0;
-			}
-		break;
-	}
+        case 1: // Esperando liberación
+            if (BUTTON != PRESSED) {
+                if (TI_GetTics(TimRebots) >= TREBOTS) {
+                    ButtonState = OFF;
+                    TI_ResetTics(TimRebots);
+                    state--;
+                }
+            } else {
+                TI_ResetTics(TimRebots); // Si se vuelve a pulsar, reseteamos
+            }
+            break;
+    }
 }

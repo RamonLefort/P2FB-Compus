@@ -3,7 +3,9 @@
 #include <xc.h>
 #include "TAD_TIMER.h"
 #include "TAD_LCD.h"
-
+#include "TAD_IFC.h"
+#include "TAD_SIOTime.h"
+#include "TAD_SIOInt.h"
 
 //
 //--------------------------------CONSTANTS---AREA-----------
@@ -27,6 +29,7 @@
 static unsigned char Rows, Columns;
 static unsigned char RowAct, ColumnAct;
 static int Timer;
+static unsigned char t_msg;
 //
 //---------------------------End--VARIABLES---AREA-----------
 //
@@ -55,7 +58,8 @@ void LcInit(char rows, char columns) {
 // Post: This routine can last until 100ms
 // Post: The display remains cleared, the cursor is turned OFF and at the position (0, 0).
 	int i;
-	TI_NewTimer(&Timer); 
+	TI_NewTimer(&Timer);
+    TI_NewTimer(&t_msg);
 	Rows = rows; Columns = columns;
 	RowAct = ColumnAct = 0;
 	SetControlsSortida();
@@ -268,6 +272,156 @@ void EscriuPrimeraOrdre(char ordre) {
 	 SetD5(ordre & 0x02 ? 1 : 0);
 	 SetD4(ordre & 0x01 ? 1 : 0);
 	EnableDown();
+}
+
+static MsgLCD cola[3];
+static unsigned char n_msgs = 0;
+static unsigned char state = 0;
+const char* prot_nombres[] = {"Llet ", "Ous  ", "Pinzell ", "Carn "};
+const char* anim_nombres[] = {"Vaca", "Gallina", "Cavall", "Porc"};
+
+void LCD_PutInt(unsigned char val) {
+    if (val >= 10) LcPutChar((val / 10) + '0');
+    LcPutChar((val % 10) + '0');
+}
+
+void LCD_ResetLCD(){
+    state = 0;
+    n_msgs = 0;
+    LcClear();
+}
+
+void LCD_PushMsg(unsigned char tipo, unsigned char id, unsigned char v1, unsigned char v2) {
+    if (n_msgs >= 3) return;
+
+    // Evitar duplicar el mensaje de bienvenida en la cola
+    if (tipo == 0) {
+        cola[n_msgs].tipo = tipo;
+        n_msgs++;
+        return;
+    }
+
+    cola[n_msgs].tipo = tipo;
+    cola[n_msgs].id = id;
+    cola[n_msgs].val1 = v1;
+    cola[n_msgs].val2 = v2;
+    n_msgs++;
+}
+
+void LCD_Motor(void) {
+    static char* ptr = 0;
+    static unsigned char char_idx = 0;
+
+    if (n_msgs == 0){
+        return;
+    }
+
+    switch(state) {
+        case 0: // Enviar comando de borrado
+            LcClear();
+            TI_ResetTics(t_msg); // Reutilizamos el timer de los mensajes
+            state = 1; 
+            break;
+
+        case 1: // ESPERA ASÍNCRONA: Esperar a que el hardware del LCD termine (2 ms)
+            if (TI_GetTics(t_msg) >= 2) {
+                char_idx = 0;
+                if (cola[0].tipo == 0){
+                    ptr = IFC_GetFarmName();
+                }else if(cola[0].tipo == 1){
+                    ptr = "Nou Producte \0";
+                }else{
+                    ptr = "Nou Animal \0";
+                }
+                state++;
+            }
+            break;
+
+        case 2: // Imprimir prefijo o FarmName
+            if (ptr && ptr[char_idx] != '\0') {
+                LcPutChar(ptr[char_idx++]);
+            } else {
+                char_idx = 0;
+                state++;
+                
+                //Baja a la segunda línea
+                LcGotoXY(0, 1);
+            }
+            break;
+
+        case 3: // Imprimir Datos Variables
+            if (cola[0].tipo == 0) { // Fecha
+                if(char_idx == 0){
+                    LCD_PutInt(TIME_GetDay());
+                }
+                if(char_idx == 1){
+                    LcPutChar('/');
+                }
+                if(char_idx == 2){
+                    LCD_PutInt(TIME_GetMonth());
+                }
+                if(char_idx == 3){ 
+                    ptr = "/2026"; state++; char_idx = 0; return;
+                }
+            } else { // Producto o Animal
+                if (char_idx == 0) {
+                    ptr = (cola[0].tipo == 1) ? prot_nombres[cola[0].id] : anim_nombres[cola[0].id];
+                    state++;
+                    char_idx = 0;
+                    return;
+                }
+            }
+            char_idx++;
+            break;
+            
+        case 4: // Imprimir nombres de las tablas y sufijos
+            if (ptr && ptr[char_idx] != '\0') {
+                LcPutChar(ptr[char_idx++]);
+            } else {
+                if (cola[0].tipo != 0) { // Valor final para notificaciones
+                    LcPutChar(':');
+                    LcPutChar(' ');
+                    LCD_PutInt(cola[0].val1);
+                }
+                state++;
+            }
+            break;
+
+        case 5: 
+            if (cola[0].tipo == 0) {
+                LcCursorOff();
+                // Es la pantalla base. Si llega algo a la cola (n_msgs > 1), la destruimos ahora mismo.
+                if (n_msgs > 1) {
+                    cola[0] = cola[1];
+                    cola[1] = cola[2];
+                    n_msgs--;
+                    state = 0; // Ir directo a pintar la alerta
+                }
+            } else {
+                // Es una alerta (tipo 1 o 2). Iniciamos la cuenta atrás de 3s.
+                TI_ResetTics(t_msg);
+                LcCursorOff();
+                state++;
+            }
+            break;
+
+        case 6: 
+            // A este estado SÓLO se entra si estamos mostrando una alerta temporal
+            if (TI_GetTics(t_msg) >= 3000){
+                // Rotar cola (Shift Left)
+                cola[0] = cola[1];
+                cola[1] = cola[2];
+                n_msgs--;
+                
+                // Si ya no quedan alertas, inyectamos la pantalla base por defecto
+                if(n_msgs == 0){
+                    cola[0].tipo = 0;
+                    n_msgs++;
+                }
+                state = 0; // Volver a pintar
+            }
+            break;
+    }
 }
 
 //

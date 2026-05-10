@@ -1,6 +1,9 @@
 #ifndef TAD_SIOINT_H
 #define	TAD_SIOINT_H
 
+// El TAD dimensiona una cua de recepció de valors de 32 chars.
+#define MAX_RX 32
+
 void SIO_Init(void);
 
 void SIO_InterrupcioRX(void);

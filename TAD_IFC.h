@@ -5,5 +5,7 @@ void IFC_Init();
 
 void IFC_Motor();
 
+char* IFC_GetFarmName();
+
 #endif	/* TAD_IFC_H */
 

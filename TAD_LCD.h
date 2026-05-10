@@ -61,6 +61,12 @@
 #define EnableDown()            (LATBbits.LATB5 = 0)
 // -------------------------------END--HARDWARE---AREA--------------------
 
+typedef struct {
+    unsigned char tipo;  // 0: Bienvenida, 1: Producto, 2: Animal
+    unsigned char id;    // ID del animal o producto (Vaca, Huevo, etc.)
+    unsigned char val1;  // Día o Cantidad
+    unsigned char val2;  // Mes o Número de animal
+} MsgLCD;
 
 void LcInit(char rows, char columns);
 // Pre: Rows = {1, 2, 4}  Columns = {8, 16, 20, 24, 32, 40 }
@@ -100,13 +106,13 @@ void LcPutChar(char c);
 // The row is never increased. 
 	// The char is written
 
-void LcPutString(char *s);
-// Post: Paints the string from the actual cursor position. 
-// The coordinate criteria is the same as the LcPutChar. 
-// Post: Can last up to 40us per char of a routine output.
+void LCD_Motor(void);
 
+void LCD_ResetLCD();
 
+void LCD_PutInt(unsigned char val);
 
+void LCD_PushMsg(unsigned char tipo, unsigned char id, unsigned char v1, unsigned char v2);
 
 #endif	/* LCTLCD_H */
 

@@ -8,19 +8,9 @@ void ADC_Init (void){
     //adquisición y de conversión ya que sino nos daban valores aleatorios
 }
 
-void ADC_PickChannel(char i){
-    switch(i){
-        case 0:
-            ADCON0bits.CHS = 0x00;
-            break;
-        case 1:
-            ADCON0bits.CHS = 0x01;
-            break;
-        case 2:
-            ADCON0bits.CHS = 0x02;
-            break;
-    }
- }
+void ADC_PickChannel(unsigned char i) {
+    ADCON0 = (unsigned char)((ADCON0 & 0xC3) | (i << 2));
+}
 
 void ADC_IniciaConversio(void){
     ADCON0bits.GO_DONE = 1;

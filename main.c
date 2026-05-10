@@ -8,8 +8,8 @@
 #include "TAD_IFC.h"
 #include "TAD_SIOTime.h"
 #include "TAD_LCD.h"
-#include "TAD_LIGHT.h"
 #include "TAD_ANIMALS.h"
+#include "TAD_EEPROM.h"
 
 //Configuramos el Oscilador a 40MHz
 #pragma config OSC = HSPLL
@@ -44,18 +44,19 @@ void main(void) {
     HB_Init();
     ANIMALS_Init();
     TIME_Init();
-    LIGHT_Init();
+    IFC_Init();
     LcInit(2, 16);
-    LcPutString("Hello");
-    LcCursorOff();
 	while(1){
         HB_Motor();
         JSK_Motor();
         BTN_Motor();
         IFC_Motor();
         TIME_Motor();
-        LIGHT_Motor();
         ANIMALS_Motor();
+        CLOCK_Motor();
+        LCD_Motor();
+        MSG_Motor();
+        EEMOTOR_Task();
 	}
 	return;
 }

@@ -6,16 +6,13 @@
 #define CONFIGURACIO_RCSTA 0x90     // Enable canal serie, 8 bits, asíncron, RX enable
 #define DIVISOR_BAUDRATE 255
 
-// El TAD dimensiona una cua de recepció de valors de 32 chars.
-#define MAX_RX 32
-
 // La màscara per al final de la cua. Ull, si la mida no és potència de 2 no funcionarà!
 #define MASK_RX 0x1F
 
 // Variables locals, cua de RX
-static unsigned char CuaRX [MAX_RX] ;
+static unsigned char CuaRX [MAX_RX];
 static unsigned char IniciRX, FiRX, QuantsRX;
-static unsigned char CuaTX [MAX_RX] ;
+static unsigned char CuaTX [MAX_RX];
 static unsigned char IniciTX, FiTX, QuantsTX;
 
 // Constructor del TAD
@@ -85,17 +82,17 @@ unsigned char SIO_TXAvail(void){
 void SIO_PutChar (unsigned char ElValor){
     // Pre: SIO_TXAvail() ha retornat CERT.
     // Post: Posa un nou caràcter a enviament.
-    if ( TXIF==1 )
+    /*if ( TXIF==1 )
         TXREG=ElValor;
-    else {
+    else {*/
         di();
 
        CuaTX[IniciTX++] = ElValor;
        IniciTX &= MASK_RX;
        QuantsTX++;
-        
+       
         ei();
-    }
+    //}
 }
 
 

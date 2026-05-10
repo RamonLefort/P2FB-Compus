@@ -5,4 +5,6 @@ void HB_Init();
 
 void HB_Motor();
 
+void HB_setRebellion(unsigned char value);
+
 #endif	/* TAD_HB_H */
