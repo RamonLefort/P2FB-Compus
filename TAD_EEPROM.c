@@ -4,90 +4,74 @@
 #include "TAD_SIOInt.h"
 
 static char ee_state = 0;
-
-// Variables de control de bloque
 static unsigned char ee_addr = 0;
 static unsigned char *byte_ptr;
 static unsigned int bytes_left = 0;
 
-// ==========================================
-// Funciones Públicas de Disparo (Triggers)
-// ==========================================
-
-void EEMOTOR_TriggerReset(void) {
-    if (ee_state == 0) ee_state = 1;
+void EE_Reset(void) {
+    if (ee_state == 0){
+        ee_state = 1;
+    }
 }
 
-void EEMOTOR_TriggerWriteAll(void) {
-    if (ee_state == 0) ee_state = 2;
+void EE_WriteAll(void) {
+    if (ee_state == 0){
+        ee_state = 2;
+    }
 }
 
-void EEMOTOR_TriggerReadAll(void) {
-    if (ee_state == 0) ee_state = 4;
+void EE_ReadAll(void) {
+    if (ee_state == 0){
+        ee_state = 4;
+    }
 }
 
-// ==========================================
-// El Motor Cooperativo (Llamar en el while(1))
-// ==========================================
-
-void EEMOTOR_Task(void) {
-    // REGLA DE ORO FÍSICA: Si el hardware de la EEPROM está 
-    // ocupado quemando un byte, no hacemos nada y cedemos la CPU.
-    if (EE_IsWriting()) return;
-
+void EE_Motor(void) {
+    static char i = 0;
+    //Miramos si la EEPROM esté libre
+    if (EE_IsWriting()){
+        return;
+    }
     switch(ee_state) {
-        static char i = 0;
+        //Estado de espera del motor de la EEPROM
         case 0:
             break;
-
-        // ----------------------------------
-        // FUNCIONALIDAD 1: RESETEAR
-        // ----------------------------------
-        case 1:
-            // Para resetear la granja, basta con decir que hay 0 animales.
-            // Los datos viejos se quedarán en memoria como "basura", pero 
-            // el sistema los ignorará porque total_animals = 0.
+        case 1: //Estado de reseteo del sistema
+            //Reseteamos la granja poniendo todo el contenido de la EEPROM a 0 
             EE_Write(i, 0);
-            if(++i == 0) { // Al dar la vuelta de 255 a 0
+            //Reiniciamos las variables del sistema una vez acabamos de escribir 0 en la EEPROM
+            if(++i == 0) {
                 ANIMALS_Init();
                 ee_state = 0;
             }
             break;
-
-        // ----------------------------------
-        // FUNCIONALIDAD 2: ESCRIBIR
-        // ----------------------------------
-        case 2:
-            // 1. Guardamos el dato raíz
+        case 2: //Estado de escritura del sistema
+            //Escribimos el total de animales en la primera dirección de la EEPROM
             EE_Write(0x00, ANIMALS_GetTotalAnimals());
-            
-            // 2. Preparamos puntero al array de animales
+            //Reiniciamos las variables de la EEPROM antes de escribir el array de animales
             byte_ptr = (unsigned char*)ANIMALS_GetAnimals();
             bytes_left = ANIMALS_GetTotalAnimals() * sizeof(Animals);
-            ee_addr = 0x01; // El array empieza justo después del total
+            ee_addr = 0x01;
             ee_state = 3;
             break;
 
         case 3:
+            //Escribimos el array de animales en el resto de direcciones de la EEPROM
             if (bytes_left > 0) {
                 EE_Write(ee_addr++, *byte_ptr++);
                 bytes_left--;
             } else {
-                ee_state = 0; // Guardado finalizado
+                ee_state = 0;
             }
             break;
-
-        // ----------------------------------
-        // FUNCIONALIDAD 3: LEER
-        // ----------------------------------
-        case 4:
-            // 1. Leemos el total
+        case 4: //Estado de lectura del sistema
+            //Leemos la variable total_animals y la guardamos en el TAD_ANIMALS
             unsigned char num = EE_Read(0x00);
-            if (num > 24) num = 0; // Validamos integridad básica
-            
+            if (num > 24){
+                num = 0;
+            }
             ANIMALS_setTotalAnimals(num);
-
-            // 2. Preparamos para volcar el bloque de animales a RAM
+            //Reiniciamos las variables de la EEPROM antes de leer el array de animales
             byte_ptr = (unsigned char*)ANIMALS_GetAnimals();
             bytes_left = num * sizeof(Animals);
             ee_addr = 0x01;
@@ -95,11 +79,12 @@ void EEMOTOR_Task(void) {
             break;
 
         case 5:
+            //Leemos el array de animales de la EEPROM y lo guardamos en el TAD_ANIMALS
             if (bytes_left > 0) {
                 *byte_ptr++ = EE_Read(ee_addr++);
                 bytes_left--;
             } else {
-                // AQUÍ: Disparamos la reconstrucción cooperativa en el TAD_ANIMALS
+                //Activamos la reconstrucción del sistema en el TAD_ANIMALS
                 ANIMALS_Rebuild(); 
                 ee_state = 0; 
             }
@@ -107,6 +92,7 @@ void EEMOTOR_Task(void) {
     }
 }
 
+//Comando de escritura de la EEPROM
 void EE_Write(char address, char data){
     EEADR = address;
     EEDATA = data;
@@ -120,11 +106,12 @@ void EE_Write(char address, char data){
     ei();
 }
 
-//Retorna 1 si segueix escrivint
+//Devuelve 1 si está escribiendo
 char EE_IsWriting(void){
     return EECON1bits.WR;
 }
 
+//Comando de lectura de la EEPROM
 unsigned char EE_Read(char address){
     EEADR = address;
     EECON1bits.EEPGD = 0;

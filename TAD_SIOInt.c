@@ -82,6 +82,7 @@ unsigned char SIO_TXAvail(void){
 void SIO_PutChar (unsigned char ElValor){
     // Pre: SIO_TXAvail() ha retornat CERT.
     // Post: Posa un nou caràcter a enviament.
+    //Hemos borrado este 'if' ya que sino se nos 'movian' algunas letras al enviar comandos...
     /*if ( TXIF==1 )
         TXREG=ElValor;
     else {*/

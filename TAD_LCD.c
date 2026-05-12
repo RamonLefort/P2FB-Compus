@@ -280,23 +280,27 @@ static unsigned char state = 0;
 const char* prot_nombres[] = {"Llet ", "Ous  ", "Pinzell ", "Carn "};
 const char* anim_nombres[] = {"Vaca", "Gallina", "Cavall", "Porc"};
 
+//Convertimos el valor en char a caracteres
 void LCD_PutInt(unsigned char val) {
-    if (val >= 10) LcPutChar((val / 10) + '0');
+    if(val >= 10){
+        LcPutChar((val / 10) + '0');
+    }
     LcPutChar((val % 10) + '0');
 }
 
+//Reseteamos la cola de mensajes del LCD
 void LCD_ResetLCD(){
     state = 0;
     n_msgs = 0;
     LcClear();
 }
 
+//Añadimos un mensaje a la cola del LCD
 void LCD_PushMsg(unsigned char tipo, unsigned char id, unsigned char v1, unsigned char v2) {
     if (n_msgs >= 3){
         return;
     }
-
-    // Evitar duplicar el mensaje de bienvenida en la cola
+    
     if (tipo == 0) {
         cola[n_msgs].tipo = tipo;
         n_msgs++;
@@ -319,13 +323,13 @@ void LCD_Motor(void) {
     }
 
     switch(state) {
-        case 0: // Enviar comando de borrado
+        case 0: //Enviamos el comando de borrado
             LcClear();
-            TI_ResetTics(t_msg); // Reutilizamos el timer de los mensajes
+            TI_ResetTics(t_msg);
             state = 1; 
             break;
 
-        case 1: // ESPERA ASÍNCRONA: Esperar a que el hardware del LCD termine (2 ms)
+        case 1: //Esperamos a que finalice el LcClear (aprox 2ms)
             if (TI_GetTics(t_msg) >= 2) {
                 char_idx = 0;
                 if (cola[0].tipo == 0){
@@ -339,20 +343,19 @@ void LCD_Motor(void) {
             }
             break;
 
-        case 2: // Imprimir prefijo o FarmName
+        case 2: //Enviamos el inicio del mensaje: FarmName o un texto guardado
             if (ptr && ptr[char_idx] != '\0') {
                 LcPutChar(ptr[char_idx++]);
             } else {
                 char_idx = 0;
                 state++;
-                
-                //Baja a la segunda línea
+                //Baja a la segunda línea para evitar que no se vea el mensaje por ser muy largo
                 LcGotoXY(0, 1);
             }
             break;
 
-        case 3: // Imprimir Datos Variables
-            if (cola[0].tipo == 0) { // Fecha
+        case 3: //Enviamos los datos de las variables
+            if (cola[0].tipo == 0) { //Fecha actual
                 if(char_idx == 0){
                     LCD_PutInt(TIME_GetDay());
                 }
@@ -365,7 +368,7 @@ void LCD_Motor(void) {
                 if(char_idx == 3){ 
                     ptr = "/2026"; state++; char_idx = 0; return;
                 }
-            } else { // Producto o Animal
+            } else { //Producto o Animal del mensaje
                 if (char_idx == 0) {
                     ptr = (cola[0].tipo == 1) ? prot_nombres[cola[0].id] : anim_nombres[cola[0].id];
                     state++;
@@ -376,11 +379,11 @@ void LCD_Motor(void) {
             char_idx++;
             break;
             
-        case 4: // Imprimir nombres de las tablas y sufijos
+        case 4: //Enviamos los datos de las variables letra por letra
             if (ptr && ptr[char_idx] != '\0') {
                 LcPutChar(ptr[char_idx++]);
             } else {
-                if (cola[0].tipo != 0) { // Valor final para notificaciones
+                if (cola[0].tipo != 0) {
                     LcPutChar(':');
                     LcPutChar(' ');
                     LCD_PutInt(cola[0].val1);
@@ -389,38 +392,35 @@ void LCD_Motor(void) {
             }
             break;
 
-        case 5: 
+        case 5:  //Apagamos el cursor, iniciamos el contaje de tiempo y reordenamos la cola
             if (cola[0].tipo == 0) {
                 LcCursorOff();
-                // Es la pantalla base. Si llega algo a la cola (n_msgs > 1), la destruimos ahora mismo.
+                //Miramos si ha llegado un nuevo mensaje
                 if (n_msgs > 1) {
                     cola[0] = cola[1];
                     cola[1] = cola[2];
                     n_msgs--;
-                    state = 0; // Ir directo a pintar la alerta
+                    state = 0;
                 }
             } else {
-                // Es una alerta (tipo 1 o 2). Iniciamos la cuenta atrás de 3s.
                 TI_ResetTics(t_msg);
                 LcCursorOff();
                 state++;
             }
             break;
 
-        case 6: 
-            // A este estado SÓLO se entra si estamos mostrando una alerta temporal
+        case 6: //Esperamos a que pasen los 3 segundos y mostramos el siguiente mensaje de la cola
             if (TI_GetTics(t_msg) >= 3000){
-                // Rotar cola (Shift Left)
+                //Actualizamos la cola de mensajes
                 cola[0] = cola[1];
                 cola[1] = cola[2];
                 n_msgs--;
-                
-                // Si ya no quedan alertas, inyectamos la pantalla base por defecto
+                // Si ya no quedan mensajes, ponemos el mensaje de bienvenida
                 if(n_msgs == 0){
                     cola[0].tipo = 0;
                     n_msgs++;
                 }
-                state = 0; // Volver a pintar
+                state = 0;
             }
             break;
     }
