@@ -64,8 +64,8 @@
 typedef struct {
     unsigned char tipo;  // 0: Bienvenida, 1: Producto, 2: Animal
     unsigned char id;    // ID del animal o producto (Vaca, Huevo, etc.)
-    unsigned char val1;  // D�a o Cantidad
-    unsigned char val2;  // Mes o N�mero de animal
+    unsigned char val1;  // Día o Cantidad
+    unsigned char val2;  // Mes o Número de animal
 } MsgLCD;
 
 void LcInit(char rows, char columns);
@@ -107,12 +107,19 @@ void LcPutChar(char c);
 	// The char is written
 
 void LCD_Motor(void);
+//Pre: -
+//Post: Motor del LCD, se encarga de realizar la visualización de los mensajes
 
 void LCD_ResetLCD();
+//Pre: -
+//Post: Realiza un reset del LCD y de su cola
 
 void LCD_PutInt(unsigned char val);
+//Pre: 0 <= val <= 99
+//Post: Realiza una conversión de un número Char y lo escribe en el LCD
 
 void LCD_PushMsg(unsigned char tipo, unsigned char id, unsigned char v1, unsigned char v2);
+//Pre: 0 <= tipo <= 2
+//Post: Guarda un nuevo mensaje en la cola de mensajes del LCD
 
 #endif	/* LCTLCD_H */
-
